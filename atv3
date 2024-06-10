@@ -1,0 +1,145 @@
+CREATE TABLE DimCliente (
+    IDCliente INT PRIMARY KEY,
+    NomeCliente VARCHAR(100) NOT NULL,
+    IDEmpresa INT NOT NULL
+);
+
+CREATE TABLE DimData (
+    IDData DATE PRIMARY KEY,
+    Ano INT NOT NULL,
+    Mes INT NOT NULL,
+    Dia INT NOT NULL
+);
+
+CREATE TABLE DimEmpresa (
+    IDEmpresa INT PRIMARY KEY,
+    NomeEmpresa VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE DimPrato (
+    IDPrato INT PRIMARY KEY,
+    NomePrato VARCHAR(100) NOT NULL,
+    Categoria VARCHAR(50) NOT NULL
+);
+
+
+
+CREATE TABLE FatoPedido (
+    IDPedido INT PRIMARY KEY,
+    IDCliente INT NOT NULL,
+    IDData DATE NOT NULL,
+    IDEmpresa INT NOT NULL,
+    IDPrato INT NOT NULL,
+    ValorTotalPedido DECIMAL(10, 2) NOT NULL,
+    ValorUnitarioPrato DECIMAL(10, 2) NOT NULL,
+    Quantidade INT NOT NULL,
+    NumeroPessoas INT NOT NULL,
+    FOREIGN KEY (IDCliente) REFERENCES DimCliente(IDCliente),
+    FOREIGN KEY (IDData) REFERENCES DimData(IDData),
+    FOREIGN KEY (IDEmpresa) REFERENCES DimEmpresa(IDEmpresa),
+    FOREIGN KEY (IDPrato) REFERENCES DimPrato(IDPrato)
+);
+
+
+
+INSERT INTO DimCliente (IDCliente, NomeCliente, IDEmpresa) VALUES
+(1, 'JoÃ£o Silva', 1),
+(2, 'Maria Oliveira', 2);
+
+INSERT INTO DimData (IDData, Ano, Mes, Dia) VALUES
+('2024-06-01', 2024, 6, 1),
+('2024-06-02', 2024, 6, 2);
+
+INSERT INTO DimEmpresa (IDEmpresa, NomeEmpresa) VALUES
+(1, 'Empresa A'),
+(2, 'Empresa B');
+
+INSERT INTO DimPrato (IDPrato, NomePrato, Categoria) VALUES
+(1, 'Pizza', 'Principal'),
+(2, 'Sorvete', 'Sobremesa');
+
+-- Inserindo dados na tabela de fatos (exemplo)
+
+INSERT INTO FatoPedido (IDPedido, IDCliente, IDData, IDEmpresa, IDPrato, ValorTotalPedido, ValorUnitarioPrato, Quantidade, NumeroPessoas) VALUES
+(1, 1, '2024-06-01', 1, 1, 50.00, 25.00, 2, 3),
+(2, 2, '2024-06-02', 2, 2, 30.00, 10.00, 3, 4);
+
+
+SELECT 
+    d.Ano,
+    c.NomeCliente,
+    COUNT(fp.IDPedido) AS TotalPedidos
+FROM 
+    FatoPedido fp
+JOIN 
+    DimData d ON fp.IDData = d.IDData
+JOIN 
+    DimCliente c ON fp.IDCliente = c.IDCliente
+GROUP BY 
+    d.Ano, c.NomeCliente
+ORDER BY 
+    d.Ano, TotalPedidos DESC;
+
+
+SELECT 
+    c.NomeCliente,
+    SUM(fp.ValorTotalPedido) AS TotalGasto
+FROM 
+    FatoPedido fp
+JOIN 
+    DimCliente c ON fp.IDCliente = c.IDCliente
+GROUP BY 
+    c.NomeCliente
+ORDER BY 
+    TotalGasto DESC;
+
+
+SELECT 
+    d.Ano,
+    c.NomeCliente,
+    SUM(fp.NumeroPessoas) AS TotalPessoas
+FROM 
+    FatoPedido fp
+JOIN 
+    DimData d ON fp.IDData = d.IDData
+JOIN 
+    DimCliente c ON fp.IDCliente = c.IDCliente
+GROUP BY 
+    d.Ano, c.NomeCliente
+ORDER BY 
+    d.Ano, TotalPessoas DESC;
+
+SELECT 
+    e.NomeEmpresa,
+    COUNT(DISTINCT c.IDCliente) AS TotalFuncionarios
+FROM 
+    FatoPedido fp
+JOIN 
+    DimCliente c ON fp.IDCliente = c.IDCliente
+JOIN 
+    DimEmpresa e ON c.IDEmpresa = e.IDEmpresa
+GROUP BY 
+    e.NomeEmpresa
+ORDER BY 
+    TotalFuncionarios DESC;
+
+SELECT 
+    d.Ano,
+    e.NomeEmpresa,
+    COUNT(DISTINCT fp.IDCliente) AS TotalFuncionarios
+FROM 
+    FatoPedido fp
+JOIN 
+    DimData d ON fp.IDData = d.IDData
+JOIN 
+    DimCliente c ON fp.IDCliente = c.IDCliente
+JOIN 
+    DimEmpresa e ON c.IDEmpresa = e.IDEmpresa
+JOIN 
+    DimPrato p ON fp.IDPrato = p.IDPrato
+WHERE 
+    p.Categoria = 'sobremesa'
+GROUP BY 
+    d.Ano, e.NomeEmpresa
+ORDER BY 
+    d.Ano, TotalFuncionarios DESC;
